@@ -1,0 +1,462 @@
+---
+title: "The Decade of Disruption: US-China Tech Giants Comparison"
+subtitle: "A Data Story of Rise, Resilience and Realignment (2015-2025)"
+date: "2025-11-20"
+format:
+  html:
+    # 添加以下行来消除所有消息和警告
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-summary: "Show Code"
+    css: styles.css
+    echo: false
+    warning: false
+    message: false
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r}
+# 在setup块开头添加，消除冲突警告
+library(conflicted)
+conflict_prefer("filter", "dplyr")
+conflict_prefer("lag", "dplyr")
+library(tidyverse)
+library(plotly)
+library(lubridate)
+library(scales)
+library(here)
+
+
+cleaned_data <- read_csv(here("data", "processed", "stock_prices_cleaned.csv"))
+source(here("scripts","03_visualization.R"))
+```
+
+```{r}
+knitr::opts_chunk$set(
+
+echo = FALSE,
+
+warning = FALSE,
+
+message = FALSE,
+
+fig.align = "center",
+
+fig.width = 10,
+
+fig.height = 6
+
+)
+```
+
+## Executive Summary
+
+Data analysis reveals distinct developmental trajectories between US and
+Chinese tech giants over the past decade. US technology companies
+(represented by NVDA and MSFT) have demonstrated sustained growth driven
+by technological innovation and global market expansion, while Chinese
+companies have shown stronger risk resilience and adaptability to
+domestic market conditions. Notably, the AI technological revolution and
+geopolitical factors have emerged as critical variables shaping market
+dynamics over the past years.
+
+```{r}
+stats_summary <- cleaned_data %>%
+  group_by(symbol, region) %>%
+  summarise(
+    total_return = (last(adjusted) - first(adjusted)) / first(adjusted),
+    .groups = 'drop'
+  )
+
+ggplot(stats_summary, aes(x = reorder(symbol, total_return), y = total_return, fill = region)) +
+  geom_col() +
+  scale_y_continuous(labels = percent_format()) +
+  coord_flip() +
+  labs(
+    title = "Total Returns: 2015-2025",
+    subtitle = "Cumulative performance across all companies",
+    x = "", y = "Total Return", fill = "Region"
+  ) +
+  scale_fill_manual(values = c("US" = "#3498db", "China" = "#e74c3c")) +
+  theme_minimal()
+```
+
+## Chapter 1: The Starting Line (2015)
+
+**2015 Market Structure**:
+
+**US Dominance**: Apple, Microsoft and others had established solid
+ecosystem advantages
+
+**China's Rising Presence**: Alibaba and Tencent experienced rapid
+growth during the mobile internet wave
+
+**Valuation Gap**: US companies generally commanded higher P/E ratios,
+reflecting market premiums for technological leadership
+
+**Key Insight:** 2015 established a dual-track development pattern of
+"US leading innovation, China leading application."
+
+## Chapter 2: The Growth Race (2015-2018)
+
+The mid-2010s witnessed explosive growth as mobile internet became
+ubiquitous and platform business models scaled globally.
+
+```{r growth-period, fig.height=7}
+
+#2015-2018年增长期
+growth_data <- cleaned_data %>%
+
+filter(year(date) %in% 2015:2018)
+#创建赛车图函数
+create_race_chart <- function(data) {
+
+p <- ggplot(data, aes(x = date, y = cumulative_return,
+
+color = symbol, group = symbol,
+
+text = paste("Company:", symbol,
+
+"
+
+Date:", date,
+
+"
+
+Return:", round(cumulative_return, 1), "%"))) +
+
+geom_line(size = 1.2, alpha = 0.8) +
+
+labs(
+
+title = "Tech Giants (China vs US)",
+
+subtitle = "Cumulative Return (Jan 2015 = 100)",
+
+x = "Date",
+
+y = "Return (%)",
+
+color = "Company"
+
+) +
+
+scale_color_viridis_d() +
+
+scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+
+theme_minimal()
+
+ggplotly(p, tooltip = "text")
+
+}
+
+create_race_chart(growth_data)
+```
+
+**Core Growth Phase Findings**:
+
+### US Company Performance
+
+-   **NVDA Extraordinary Growth**: Over 1500% cumulative returns,
+    highlighting GPU's core value in the AI era
+-   **Cloud Services Driven**: Microsoft and Amazon achieved secondary
+    growth curves through cloud computing
+-   **Platform Effects**: Google and Meta continuously expanded
+    competitive advantages through network effects
+
+### Chinese Company Characteristics
+
+-   **Mobile Internet Dividend**: Tencent and Alibaba successfully
+    migrated PC advantages to mobile platforms
+-   **Localized Innovation**: Meituan and JD.com established barriers in
+    O2O and e-commerce logistics
+-   **Growth Quality**: Although growing faster, volatility was
+    significantly higher than US counterparts
+
+**Key Event Impact**: Cloud computing commercialization, smartphone
+proliferation, and mobile payment explosion were the main drivers during
+this phase.
+
+## Chapter 3: Tests and Resilience (2018-2021)
+
+This period challenged tech giants with trade tensions, pandemic
+disruptions, and increasing regulatory scrutiny.
+
+```{r challenge-period, fig.height=7}
+#挑战期分析
+challenge_data <- cleaned_data %>%
+
+filter(year(date) %in% 2018:2021)
+
+#创建热力图函数
+create_returns_heatmap <- function(data) {
+
+yearly_returns <- data %>%
+
+mutate(year = year(date)) %>%
+
+group_by(symbol, year) %>%
+
+summarise(
+
+yearly_return = (last(adjusted) - first(adjusted)) / first(adjusted),
+
+.groups = 'drop'
+
+)
+
+p <- ggplot(yearly_returns, aes(x = year, y = symbol, fill = yearly_return)) +
+
+geom_tile() +
+
+labs(
+
+title = "Heatmap of Return",
+
+x = "Year",
+
+y = "Company",
+
+fill = "Return"
+
+) +
+
+scale_fill_gradient2(low = "red", mid = "white", high = "green",
+
+midpoint = 0, labels = percent) +
+
+scale_x_continuous(breaks = seq(2015, 2024, 1)) +
+
+theme_minimal()
+
+ggplotly(p)
+
+}
+
+create_returns_heatmap(challenge_data)
+```
+
+### Crisis Response Capability Analysis
+
+**Trade Friction Period (2018-2019)**: - Chinese companies generally
+faced greater pressure, with Baidu and Alibaba showing significant
+drawdowns - US tech stocks demonstrated relative resilience, though
+companies with China-dependent supply chains were affected
+
+**Pandemic Impact and Recovery (2020-2021)**:
+
+\- **Beneficiaries**: NVDA, Tesla and other "pandemic winners" performed
+exceptionally
+
+\- **Resilience Performance**: Tencent, Microsoft and other diversified
+enterprises quickly adapted to remote work demands
+
+\- **Recovery Divergence**: Chinese companies showed stronger policy
+adaptability, while US companies further consolidated technological
+advantages
+
+**Heatmap Analysis**: 2020 emerged as the year with most significant
+performance divergence, where digitalization levels determined corporate
+risk resistance capabilities.
+
+## Chapter 4: The New Landscape (2022-2024)
+
+The most recent period has been defined by AI breakthroughs and
+geopolitical realignments.
+
+```{r current-era, fig.height=7}
+
+#当前时代分析
+current_data <- cleaned_data %>%
+
+filter(year(date) >= 2022)
+
+create_race_chart(current_data)
+```
+
+### AI Revolution and Structural Reshaping
+
+**NVDA's Dominant Performance**: - Cumulative returns exceeded 30,000%,
+reflecting the scarcity value of AI chips - Became a critical "enabler"
+in US-China tech competition
+
+**US-China Divergent Paths**:
+
+\- **US Focus**: Foundation models and computing infrastructure (NVDA,
+MSFT)
+
+\- **China Focus**: Application scenario implementation (Tencent,
+Baidu's AI applications)
+
+**Regulatory Environment Impact**: - China's antitrust policies
+temporarily suppressed valuations but fostered healthier competition -
+US chip controls created new market barriers and opportunities
+
+## Advanced Quantitative Analysis
+
+This section provides deeper insights through sophisticated quantitative
+techniques, moving beyond simple price trends to explore risk,
+correlation, and market dynamics.
+
+### Risk-Return Profile Assessment
+
+Understanding the trade-off between risk and return is fundamental to
+investment analysis. This chart plots annualized returns against
+volatility, with bubble size representing total return over the decade.
+
+```{r risk-return-analysis, fig.height=7}
+
+create_risk_return_analysis(cleaned_data)
+```
+
+**Key Insights**:
+
+\- **Efficient Frontier**: Companies positioned along the efficient
+frontier offer the best risk-adjusted returns
+
+\- **Volatility Clustering**: Chinese companies generally exhibit higher
+volatility, reflecting different market structures
+
+\- **Risk-Adjusted Performance**: Sharpe ratios help identify truly
+superior performers after accounting for risk
+
+### Correlation Structure
+
+Markets don't move in isolation. This correlation matrix reveals how
+closely these tech giants move together, providing insights into
+diversification opportunities.
+
+```{r correlation-analysis, fig.height=7}
+
+create_correlation_analysis(cleaned_data)
+```
+
+**Patterns Observed**:
+
+\- **Regional Clustering**: Stronger correlations within regions than
+between them
+
+\- **Sector Dynamics**: Companies in similar business segments show
+higher correlation
+
+\- **Diversification Benefits**: Low or negative correlations indicate
+potential hedging opportunities
+
+```{r regime-analysis, fig.height=7}
+
+create_market_regime_analysis(cleaned_data)
+```
+
+**Regime Characteristics**:
+
+\- **Growth Period (2015-2017)**: Mobile internet and cloud computing
+drove returns
+
+\- **Trade War (2018-2020)**: Supply chain disruptions created winners
+and losers
+
+\- **Pandemic & Recovery (2020-2021)**: Digital transformation
+accelerated -
+
+-**Inflation & AI Boom (2022-2025)**: AI infrastructure became the
+dominant theme
+
+### Momentum Effects
+
+Momentum investing is a well-documented phenomenon. This analysis
+examines whether past returns predict future performance.
+
+```{r momentum-analysis, fig.height=7}
+
+create_momentum_analysis(cleaned_data)
+```
+
+**Momentum Insights**:
+
+\- **Persistence Patterns**: Evidence of momentum continuation in
+certain periods
+
+\- **Regional Differences**: Potential variation in momentum
+effectiveness across markets
+
+\- **Trading Implications**: Supports tactical momentum-based strategies
+
+## Quantitative Conclusion
+
+### Portfolio Construction Implications
+
+1.  **Optimal Weighting**: Risk-return profiles inform strategic
+    portfolio allocation
+2.  **Hedging Strategies**: Correlation analysis suggests natural
+    hedging pairs
+3.  **Tactical Timing**: Market regime analysis supports dynamic
+    allocation approaches
+
+### Investment Strategy Applications
+
+-   **Factor Investing**: Momentum and quality factors show predictive
+    power
+-   **Risk Parity**: Volatility targeting can improve risk-adjusted
+    returns
+-   **Regime Detection**: Early identification of market shifts creates
+    alpha opportunities
+
+### Limitations and Future Research
+
+While comprehensive, this analysis has limitations including
+survivorship bias, look-ahead bias, and the challenge of capturing all
+relevant risk factors. Future research could incorporate additional
+factors like valuation metrics, sentiment indicators, and macroeconomic
+variables.
+
+## Conclusion: Key Insights
+
+### Core Findings Validation
+
+1.  **Technology Cycle Dominance**: The AI revolution is replicating
+    mobile internet era investment logic
+2.  **Geopolitical Normalization**: Tech industry deeply intertwined
+    with national security, global models facing restructuring
+3.  **Niche Differentiation**: US strength in fundamental innovation,
+    China strength in scale application
+
+### Investment Implications
+
+-   **Innovation Density** determines long-term value: NVDA's case
+    proves technological barriers matter more than scale
+-   **Policy Adaptability** becomes core competitiveness: US and Chinese
+    companies must find growth paths in different regulatory
+    environments
+-   **Technology Convergence Trend**: Cloud-native and AI-native
+    companies are reshaping traditional industry structures
+
+### Methodological Value
+
+This analysis validates the effectiveness of public market data-based
+tech industry analysis frameworks, providing quantitative tools for
+understanding complex technology-market-policy interactions.
+
+## Methodology and Data
+
+### Data Sources
+
+-   **Primary Data**: Yahoo Finance via tidyquant package
+-   **Period**: January 2015 - Current
+-   **Companies**: Leading US and Chinese technology firms
+
+### Analytical Approach
+
+-   All returns calculated from adjusted closing prices
+-   Cumulative returns normalized to 100 at starting period
+-   Interactive visualizations created with Plotly
+
+------------------------------------------------------------------------
+
+*This analysis was completed as part of DATA5002 Data Visualization
+course.*
